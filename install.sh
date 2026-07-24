@@ -24,28 +24,25 @@ echo ""
 
 # 检测已安装的 AI 工具
 DETECTED=()
+LABELS=()
+PATHS=()
 
-if [ -d "$TARGET_DIR/.trae" ]; then
-    DETECTED+=("trae")
-fi
+# 已知工具检测（目录名 → 显示名 → skills路径）
+check_tool() {
+    if [ -d "$TARGET_DIR/$1" ]; then
+        DETECTED+=("$1")
+        LABELS+=("$2")
+        PATHS+=("$TARGET_DIR/$1/skills")
+    fi
+}
 
-if [ -d "$TARGET_DIR/.claude" ]; then
-    DETECTED+=("claude")
-fi
-
-if [ -d "$TARGET_DIR/.cursor" ]; then
-    DETECTED+=("cursor")
-fi
-
-if [ -d "$TARGET_DIR/.windsurf" ]; then
-    DETECTED+=("windsurf")
-fi
-
-# 如果没检测到任何工具，使用 .arise 作为通用目录
-if [ ${#DETECTED[@]} -eq 0 ]; then
-    echo -e "${YELLOW}未检测到已知 AI 工具目录，使用通用路径 .arise/skills/${NC}"
-    DETECTED+=("arise")
-fi
+check_tool ".trae" "TRAE"
+check_tool ".claude" "Claude Code"
+check_tool ".cursor" "Cursor"
+check_tool ".windsurf" "Windsurf"
+check_tool ".augment" "Augment"
+check_tool ".cline" "Cline"
+check_tool ".opencode" "OpenCode"
 
 # 安装函数
 install_to() {
@@ -60,47 +57,45 @@ install_to() {
     echo -e "  ${GREEN}✓${NC} $label → $dest"
 }
 
-# 单个工具安装
-install_one() {
-    case $1 in
-        trae)
-            install_to "$TARGET_DIR/.trae/skills" "TRAE"
-            ;;
-        claude)
-            install_to "$TARGET_DIR/.claude/skills" "Claude Code"
-            ;;
-        cursor)
-            install_to "$TARGET_DIR/.cursor/skills" "Cursor"
-            ;;
-        windsurf)
-            install_to "$TARGET_DIR/.windsurf/skills" "Windsurf"
-            ;;
-        arise)
-            install_to "$TARGET_DIR/.arise/skills" "通用"
-            ;;
-    esac
-}
-
-# 如果检测到多个工具，让用户选择
-if [ ${#DETECTED[@]} -gt 1 ]; then
-    echo -e "${CYAN}检测到多个 AI 工具:${NC}"
+# 展示菜单
+echo -e "${CYAN}选择安装目标:${NC}"
+if [ ${#DETECTED[@]} -gt 0 ]; then
     for i in "${!DETECTED[@]}"; do
-        echo -e "  $((i+1)). ${DETECTED[$i]}"
+        echo -e "  $((i+1)). ${LABELS[$i]} (${DETECTED[$i]}/skills/)"
     done
-    echo -e "  $((${#DETECTED[@]}+1)). 全部安装"
-    echo ""
-    read -p "安装到哪个？(输入编号，默认全部): " choice
-    echo ""
-    if [ -z "$choice" ] || [ "$choice" -eq $((${#DETECTED[@]}+1)) ] 2>/dev/null; then
-        for tool in "${DETECTED[@]}"; do
-            install_one "$tool"
-        done
+fi
+echo -e "  $(( ${#DETECTED[@]}+1 )). 通用路径 (.arise/skills/)"
+echo -e "  $(( ${#DETECTED[@]}+2 )). 手动输入路径（其他工具）"
+echo ""
+read -p "输入编号 (默认通用路径): " choice
+echo ""
+
+# 处理选择
+if [ -z "$choice" ]; then
+    # 默认：通用路径
+    install_to "$TARGET_DIR/.arise/skills" "通用"
+elif [ "$choice" -le ${#DETECTED[@]} ] 2>/dev/null; then
+    # 选择了某个检测到的工具
+    install_to "${PATHS[$((choice-1))]}" "${LABELS[$((choice-1))]}"
+elif [ "$choice" -eq $(( ${#DETECTED[@]}+1 )) ] 2>/dev/null; then
+    # 通用路径
+    install_to "$TARGET_DIR/.arise/skills" "通用"
+elif [ "$choice" -eq $(( ${#DETECTED[@]}+2 )) ] 2>/dev/null; then
+    # 手动输入
+    read -p "输入 skills 目录路径 (如 .opencode/skills): " custom_path
+    if [ -z "$custom_path" ]; then
+        echo -e "${YELLOW}未输入路径，使用默认 .arise/skills/${NC}"
+        install_to "$TARGET_DIR/.arise/skills" "通用"
     else
-        install_one "${DETECTED[$((choice-1))]}"
+        # 支持相对路径和绝对路径
+        case "$custom_path" in
+            /*) install_to "$custom_path" "自定义" ;;
+            *)  install_to "$TARGET_DIR/$custom_path" "自定义" ;;
+        esac
     fi
 else
-    echo -e "${CYAN}检测到: ${DETECTED[0]}${NC}"
-    install_one "${DETECTED[0]}"
+    echo -e "${YELLOW}无效选择，使用默认 .arise/skills/${NC}"
+    install_to "$TARGET_DIR/.arise/skills" "通用"
 fi
 
 echo ""
