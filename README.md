@@ -20,28 +20,45 @@
 git clone https://github.com/sqoder/arise-skills.git
 ```
 
-### 2. 复制到你用的工具
+### 2. 复制到你的项目
 
-**Claude Code：**
-
-```bash
-# 用户级（所有项目共享）
-cp -r arise-skills/*/ ~/.claude/skills/
-
-# 或项目级（仅当前项目）
-cp -r arise-skills/*/ .claude/skills/
-```
-
-**TRAE：**
+把想要的 skill 复制到你项目的 `.arise/skills/` 目录下：
 
 ```bash
-# 项目级
-cp -r arise-skills/*/ .trae/skills/
+# 进入你的项目
+cd your-project
+
+# 创建 .arise/skills 目录
+mkdir -p .arise/skills
+
+# 复制全部 skills
+cp -r arise-skills/*/ .arise/skills/
+
+# 或者只复制你想要的
+cp -r arise-skills/bug-fix-memory .arise/skills/
+cp -r arise-skills/auto-commit-on-completion .arise/skills/
 ```
 
-**其他（Codex / Cursor / Windsurf 等）：**
+安装后你的项目结构：
 
-Skills 是 [Anthropic 开放标准](https://github.com/anthropics/skills)，兼容上述工具。具体路径查各工具文档。
+```
+your-project/
+├── src/
+├── package.json
+└── .arise/
+    ├── skills/              ← 安装的 skills
+    │   ├── bug-fix-memory/
+    │   ├── auto-commit-on-completion/
+    │   ├── workflow-habits/
+    │   ├── finishing-a-development-branch/
+    │   └── verification-before-completion/
+    ├── bug-fix-memory/      ← 运行时生成的踩坑记录
+    │   ├── log.md
+    │   └── entries/
+    └── workflow-habits.md   ← 运行时生成的习惯文件
+```
+
+任何支持 Skills 标准的 AI 编码助手（Claude Code / TRAE / Codex / Cursor / Windsurf 等）都能从 `.arise/skills/` 读取。
 
 ### 3. 开始使用
 
@@ -56,21 +73,6 @@ Skills 是 [Anthropic 开放标准](https://github.com/anthropics/skills)，兼�
 ```
 
 大部分 Skill 也会自动触发（如 `commit` 在任务完成后自动执行，`bug-memo` 在修 bug 前自动检索）。
-
-### 运行时数据
-
-Skill 工作时会在你的**项目根目录**自动生成 `.arise/` 文件夹：
-
-```
-your-project/
-├── src/
-├── package.json
-└── .arise/                  ← 自动生成
-    ├── bug-fix-memory/      ← 踩坑记录
-    │   ├── log.md
-    │   └── entries/
-    └── workflow-habits.md   ← 你的工作习惯
-```
 
 > 提示：个人使用建议将 `.arise/` 加入 `.gitignore`；团队共享则保留在版本控制中。
 
