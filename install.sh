@@ -33,7 +33,15 @@ if [ -d "$TARGET_DIR/.claude" ]; then
     DETECTED+=("claude")
 fi
 
-# 如果没检测到任何工具，创建 .arise 作为通用目录
+if [ -d "$TARGET_DIR/.cursor" ]; then
+    DETECTED+=("cursor")
+fi
+
+if [ -d "$TARGET_DIR/.windsurf" ]; then
+    DETECTED+=("windsurf")
+fi
+
+# 如果没检测到任何工具，使用 .arise 作为通用目录
 if [ ${#DETECTED[@]} -eq 0 ]; then
     echo -e "${YELLOW}未检测到已知 AI 工具目录，使用通用路径 .arise/skills/${NC}"
     DETECTED+=("arise")
@@ -52,24 +60,48 @@ install_to() {
     echo -e "  ${GREEN}✓${NC} $label → $dest"
 }
 
-# 按检测结果分发
-echo -e "${CYAN}检测到:${NC}"
-for tool in "${DETECTED[@]}"; do
-    case $tool in
+# 单个工具安装
+install_one() {
+    case $1 in
         trae)
-            echo -e "  • TRAE (.trae/)"
             install_to "$TARGET_DIR/.trae/skills" "TRAE"
             ;;
         claude)
-            echo -e "  • Claude Code (.claude/)"
             install_to "$TARGET_DIR/.claude/skills" "Claude Code"
             ;;
+        cursor)
+            install_to "$TARGET_DIR/.cursor/skills" "Cursor"
+            ;;
+        windsurf)
+            install_to "$TARGET_DIR/.windsurf/skills" "Windsurf"
+            ;;
         arise)
-            echo -e "  • 通用 (.arise/)"
             install_to "$TARGET_DIR/.arise/skills" "通用"
             ;;
     esac
-done
+}
+
+# 如果检测到多个工具，让用户选择
+if [ ${#DETECTED[@]} -gt 1 ]; then
+    echo -e "${CYAN}检测到多个 AI 工具:${NC}"
+    for i in "${!DETECTED[@]}"; do
+        echo -e "  $((i+1)). ${DETECTED[$i]}"
+    done
+    echo -e "  $((${#DETECTED[@]}+1)). 全部安装"
+    echo ""
+    read -p "安装到哪个？(输入编号，默认全部): " choice
+    echo ""
+    if [ -z "$choice" ] || [ "$choice" -eq $((${#DETECTED[@]}+1)) ] 2>/dev/null; then
+        for tool in "${DETECTED[@]}"; do
+            install_one "$tool"
+        done
+    else
+        install_one "${DETECTED[$((choice-1))]}"
+    fi
+else
+    echo -e "${CYAN}检测到: ${DETECTED[0]}${NC}"
+    install_one "${DETECTED[0]}"
+fi
 
 echo ""
 echo -e "${GREEN}✅ 安装完成！${NC}"

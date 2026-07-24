@@ -21,7 +21,9 @@ description: "Transforms vague task descriptions into structured, optimized prom
   ↓
 识别场景类型（代码审查 / Bug排查 / 功能开发 / 通用）
   ↓
-按对应模板生成优化提示词
+定位相关代码（涉及代码改动时：搜索项目，找到文件+函数+代码片段）
+  ↓
+生成优化提示词（带代码上下文）
   ↓
 展示给用户：「优化后的提示词如下，要按这个执行吗？」
   ↓
