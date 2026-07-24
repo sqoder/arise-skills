@@ -20,45 +20,24 @@
 git clone https://github.com/sqoder/arise-skills.git
 ```
 
-### 2. 复制到你的项目
+### 2. 一键安装
 
-把想要的 skill 复制到你项目的 `.arise/skills/` 目录下：
+进入你的项目目录，运行安装脚本：
 
 ```bash
-# 进入你的项目
 cd your-project
-
-# 创建 .arise/skills 目录
-mkdir -p .arise/skills
-
-# 复制全部 skills
-cp -r arise-skills/*/ .arise/skills/
-
-# 或者只复制你想要的
-cp -r arise-skills/bug-fix-memory .arise/skills/
-cp -r arise-skills/auto-commit-on-completion .arise/skills/
+/path/to/arise-skills/install.sh
 ```
 
-安装后你的项目结构：
+脚本会**自动检测**你项目里用的 AI 工具，把 skills 复制到对应路径：
 
-```
-your-project/
-├── src/
-├── package.json
-└── .arise/
-    ├── skills/              ← 安装的 skills
-    │   ├── bug-fix-memory/
-    │   ├── auto-commit-on-completion/
-    │   ├── workflow-habits/
-    │   ├── finishing-a-development-branch/
-    │   └── verification-before-completion/
-    ├── bug-fix-memory/      ← 运行时生成的踩坑记录
-    │   ├── log.md
-    │   └── entries/
-    └── workflow-habits.md   ← 运行时生成的习惯文件
-```
+| 检测到 | 安装到 |
+|--------|--------|
+| `.trae/` 存在 | `.trae/skills/` |
+| `.claude/` 存在 | `.claude/skills/` |
+| 都没有 | `.arise/skills/`（通用） |
 
-任何支持 Skills 标准的 AI 编码助手（Claude Code / TRAE / Codex / Cursor / Windsurf 等）都能从 `.arise/skills/` 读取。
+如果同时存在多个工具目录，会**同时复制到所有位置**。
 
 ### 3. 开始使用
 
