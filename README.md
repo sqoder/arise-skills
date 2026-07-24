@@ -17,7 +17,7 @@
 ### 1. 克隆仓库
 
 ```bash
-git clone https://github.com/arise/arise-skills.git
+git clone https://github.com/sqoder/arise-skills.git
 ```
 
 ### 2. 复制到你用的工具
