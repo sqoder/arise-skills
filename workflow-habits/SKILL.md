@@ -1,25 +1,28 @@
 ---
 name: "workflow-habits"
+command: "arise habits"
 description: "Records and enforces the user's personal coding workflow habits (e.g. always commit after coding, prefer minimal edits). Invoke at session start to load habits, or when user says 'remember my habit'."
 ---
 
-# Workflow Habits
+# 工作习惯记录
 
 记录你的工作习惯，让 AI 在后续每次工作中自动遵守，不用每次重复说。
 
 比如「写完代码就提交」「改动要最小化」「修 bug 前先写测试」——这些习惯记一次，以后 AI 自动按这个来。
 
-## Storage
+## 存储
 
-项目级存储，放在当前项目的 `.trae/workflow-habits.md`。文件不存在则视为还没有习惯记录。
+项目级存储，统一放在当前项目根目录的 **`.arise/workflow-habits.md`**。
+
+文件不存在则视为还没有习惯记录。
 
 格式：每条习惯一个条目，包含「触发条件」和「执行动作」。
 
-## When to Invoke
+## 何时触发
 
 ### 1. 会话开始时 → 加载习惯
 
-新对话开始、或用户开始一个编码任务时，读取 `.trae/workflow-habits.md`（存在的话），把里面的习惯作为本次工作的默认行为。**不要每次都跟用户复述习惯内容**，安静遵守即可。
+新对话开始、或用户开始一个编码任务时，读取 `.arise/workflow-habits.md`（存在的话），把里面的习惯作为本次工作的默认行为。**不要每次都跟用户复述习惯内容**，安静遵守即可。
 
 ### 2. 用户说「记住我的习惯」→ 记录
 
@@ -31,7 +34,7 @@ description: "Records and enforces the user's personal coding workflow habits (e
 - 「记住，下次……」
 - 「记得我总是……」
 
-把习惯解析成「触发条件 + 执行动作」的结构，写入 `.trae/workflow-habits.md`，并简短确认：「记下了：以后 <触发> 时会 <动作>。」
+把习惯解析成「触发条件 + 执行动作」的结构，写入 `.arise/workflow-habits.md`，并简短确认：「记下了：以后 <触发> 时会 <动作>。」
 
 ### 3. AI 观察到稳定模式 → 提示记录
 
@@ -41,9 +44,9 @@ description: "Records and enforces the user's personal coding workflow habits (e
 
 用户同意就记，拒绝就不记。
 
-## Habit File Format
+## 习惯文件格式
 
-`.trae/workflow-habits.md`：
+`.arise/workflow-habits.md`：
 
 ```markdown
 # Workflow Habits
@@ -59,13 +62,13 @@ description: "Records and enforces the user's personal coding workflow habits (e
 - **动作**: 优先最小改动，不做额外重构、不加多余注释
 - **来源**: 用户多次强调
 
-## 修 bug 前先查 bug-fix-memory
-- **触发**: 开始排查新 bug 时
-- **动作**: 先读 .trae/bug-fix-memory/log.md 查历史
+## 修 bug 前先查踩坑记录
+- **触发**: 开始排查新问题时
+- **动作**: 先读 .arise/bug-fix-memory/log.md 查历史
 - **来源**: AI 建议，用户同意
 ```
 
-## Guidelines
+## 注意事项
 
 - **安静遵守，不要复述**：加载习惯后，按习惯做就行，不要每次说「根据你的习惯 X，我现在……」。只有习惯被触发且影响决策时才提一句。
 - **习惯之间冲突时**：问用户哪个优先，不要自己猜。
@@ -73,3 +76,4 @@ description: "Records and enforces the user's personal coding workflow habits (e
 - **习惯可更新**：用户改变主意时，更新原条目而不是追加新条目，并在「来源」加一行「更新于 YYYY-MM-DD」。
 - **和 bug-fix-memory 配合**：如果用户习惯里涉及 bug 修复流程，可以在 habit 里引用 bug-fix-memory skill。
 - **项目级而非全局**：不同项目可能有不同习惯（比如开源项目要英文 commit，个人项目用中文），所以存在项目里。
+- **版本控制建议**：如果是个人习惯，建议将 `.arise/` 加入 `.gitignore`；如果是团队共享的工作规范，则保留在版本控制中。
