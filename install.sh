@@ -12,7 +12,7 @@ NC='\033[0m'
 
 # 获取脚本所在目录（即 skills 源目录）
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-SKILLS=("arise-bug-memo" "arise-commit" "arise-habits" "arise-finish" "arise-verify")
+SKILLS=("arise-bug-memo" "arise-commit" "arise-habits" "arise-finish" "arise-verify" "arise-prompt")
 
 # 目标项目目录（默认为当前工作目录）
 TARGET_DIR="${1:-.}"

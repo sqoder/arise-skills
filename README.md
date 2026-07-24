@@ -11,6 +11,7 @@
 | [arise-habits](arise-habits) | `/arise-habits` | 记录你的工作习惯（如「写完就提交」「改动最小化」），AI 后续自动遵守 |
 | [arise-finish](arise-finish) | `/arise-finish` | 开发分支完成时的处理（merge / PR / cleanup），克隆自 [superpowers](https://github.com/obra/superpowers) |
 | [arise-verify](arise-verify) | `/arise-verify` | 声称「完成」前强制验证，避免假完成，克隆自 [superpowers](https://github.com/obra/superpowers) |
+| [arise-prompt](arise-prompt) | `/arise-prompt` | 输入简短描述，生成结构化优化提示词，确认后执行 |
 
 ## 安装
 
@@ -49,6 +50,7 @@ cd your-project
 /arise-habits      → 加载 / 记录习惯
 /arise-finish      → 分支收尾
 /arise-verify      → 完成前验证
+/arise-prompt      → 优化提示词
 ```
 
 大部分 Skill 也会自动触发（如 `arise-commit` 在任务完成后自动执行，`arise-bug-memo` 在修 bug 前自动检索）。
