@@ -12,7 +12,7 @@ NC='\033[0m'
 
 # 获取脚本所在目录（即 skills 源目录）
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-SKILLS=("bug-fix-memory" "auto-commit-on-completion" "workflow-habits" "finishing-a-development-branch" "verification-before-completion")
+SKILLS=("arise-bug-memo" "arise-commit" "arise-habits" "arise-finish" "arise-verify")
 
 # 目标项目目录（默认为当前工作目录）
 TARGET_DIR="${1:-.}"
@@ -75,8 +75,8 @@ echo ""
 echo -e "${GREEN}✅ 安装完成！${NC}"
 echo ""
 echo -e "使用方式: 在 AI 编码助手中输入 ${CYAN}/arise <技能>${NC}"
-echo -e "  /arise bug-memo    查历史 / 记录踩坑"
-echo -e "  /arise commit      检查 + 提交"
-echo -e "  /arise habits      加载 / 记录习惯"
-echo -e "  /arise finish      分支收尾"
-echo -e "  /arise verify      完成前验证"
+echo -e "  /arise-bug-memo    查历史 / 记录踩坑"
+echo -e "  /arise-commit      检查 + 提交"
+echo -e "  /arise-habits      加载 / 记录习惯"
+echo -e "  /arise-finish      分支收尾"
+echo -e "  /arise-verify      完成前验证"

@@ -1,5 +1,5 @@
 ---
-name: finishing-a-development-branch
+name: arise-finish
 command: "arise finish"
 description: Use when implementation is complete, all tests pass, and you need to decide how to integrate the work
 ---

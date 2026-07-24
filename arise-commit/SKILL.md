@@ -1,5 +1,5 @@
 ---
-name: "auto-commit-on-completion"
+name: "arise-commit"
 command: "arise commit"
 description: "Auto-commits code after a coding task finishes, but only if it passes compliance checks (lint/type-check). Invoke when a coding task (bugfix, feature, refactor) is completed and there are uncommitted changes."
 ---

@@ -1,5 +1,5 @@
 ---
-name: "workflow-habits"
+name: "arise-habits"
 command: "arise habits"
 description: "Records and enforces the user's personal coding workflow habits (e.g. always commit after coding, prefer minimal edits). Invoke at session start to load habits, or when user says 'remember my habit'."
 ---

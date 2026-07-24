@@ -1,5 +1,5 @@
 ---
-name: "bug-fix-memory"
+name: "arise-bug-memo"
 command: "arise bug-memo"
 description: "Records pitfalls and hard-to-fix issues (bugs, config traps, doc gotchas, tool quirks) in the project to prevent regressions. Invoke when starting to debug a new issue (to check history first) or after resolving a tricky problem (to log it)."
 ---
