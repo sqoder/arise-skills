@@ -8,7 +8,7 @@
 |---|---|---|
 | [arise-bug-memo](arise-bug-memo) | `/arise-bug-memo` | 记录踩过的坑（难修 bug、配置陷阱、文档 gotcha、工具怪癖），下次遇到类似问题前自动检索历史 |
 | [arise-commit](arise-commit) | `/arise-commit` | 写完代码自动提交（跑 lint/typecheck 通过才提交），不用每次都说「我要提交」 |
-| [arise-habits](arise-habits) | `/arise-habits` | 记录你的工作习惯（如「写完就提交」「改动最小化」），AI 后续自动遵守 |
+| [arise-habits](arise-habits) | `/arise-habits` | 记录你的工作习惯，基于 [agentmemory](https://github.com/jayzeng/agentmemory) 语义搜索 + 自动注入，习惯再多也不会乱 |
 | [arise-finish](arise-finish) | `/arise-finish` | 开发分支完成时的处理（merge / PR / cleanup），克隆自 [superpowers](https://github.com/obra/superpowers) |
 | [arise-verify](arise-verify) | `/arise-verify` | 声称「完成」前强制验证，避免假完成，克隆自 [superpowers](https://github.com/obra/superpowers) |
 | [arise-prompt](arise-prompt) | `/arise-prompt` | 输入简短描述，生成结构化优化提示词，确认后执行 |

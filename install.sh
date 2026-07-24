@@ -101,6 +101,15 @@ fi
 echo ""
 echo -e "${GREEN}✅ 安装完成！${NC}"
 echo ""
+
+# 检测 agentmemory 依赖
+if ! command -v agent-memory &> /dev/null; then
+    echo -e "${YELLOW}⚠️  检测到未安装 agentmemory（arise-habits 的可选依赖）${NC}"
+    echo -e "   安装后可获得习惯语义搜索 + 自动注入能力："
+    echo -e "   ${CYAN}npm install -g myagentmemory && agent-memory init${NC}"
+    echo -e "   未安装也能正常使用，回退到本地文件模式。"
+    echo ""
+fi
 echo -e "使用方式: 在 AI 编码助手中输入 ${CYAN}/arise <技能>${NC}"
 echo -e "  /arise-bug-memo    查历史 / 记录踩坑"
 echo -e "  /arise-commit      检查 + 提交"
