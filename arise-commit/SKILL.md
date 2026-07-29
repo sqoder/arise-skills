@@ -8,6 +8,13 @@ description: "Auto-commits code after a coding task finishes, but only if it pas
 
 写完代码不用每次都说「我要提交」。这个 skill 在每个编码任务（修 bug、加功能、重构）完成后，自动检查未提交的改动，跑合规检查，通过就提交。
 
+## 前置动作（执行前必做）
+
+在开始提交流程之前：
+
+1. **读取习惯约束**：检查 `.arise/habits/index.md` 中标签为 `commit` 的条目，读取 `.arise/habits/commit.md` 获取用户的提交习惯（如 message 语言、是否 push 等）。文件不存在则跳过。
+2. **读取项目上下文**：检查 `.arise/context.md` 获取包管理器信息（决定用 pnpm/npm/yarn 跑命令）和 commit 语言约定。文件不存在则按默认逻辑检测。
+
 ## 何时触发
 
 当一个**明确的编码任务完成**时触发。判断「完成」的信号：
@@ -34,7 +41,9 @@ git status --porcelain
 - 无输出（没有改动）→ 什么都不做，安静结束。
 - 有改动 → 进入第 2 步。
 
-### 2. 合规检查
+### 2. 合规检查（遵循 arise-verify 门控原则）
+
+本步遵循 arise-verify 的核心逻辑：**先有证据，再有结论。** 不是「觉得没问题」，而是「跑出来确实没问题」。
 
 从 `package.json`（或同等配置文件）检测可用的检查命令，**只跑存在的**：
 
@@ -87,10 +96,37 @@ git status --porcelain
    )"
    ```
 4. **不要 push**。除非用户明确说「push」「推上去」「发布」。
+5. **清理 CodeGraph Context**：提交成功后，如果 `.arise/codegraph-context.json` 存在，立即删除（会话级缓存生命周期结束，下次任务 router 会重新生成）。同时清空 `.arise/context.md`「活跃状态」区域的「当前 taskId」字段（置为空）。
 
 ### 5. 反馈
 
 提交后一句话告诉用户：「已提交: `<commit message 第一行>` (hash)」。不要长篇大论。
+
+### 6. 更新活跃状态
+
+提交完成后，如果 `.arise/context.md` 存在，更新其「活跃状态」区域：
+- 「最近任务」→ 本次 commit 的 subject
+- 「上次更新」→ 今天日期
+
+### CodeGraph 影响信息附加
+
+生成 commit message 时，如果 `.arise/codegraph-context.json` 存在且 `riskLevel` >= MEDIUM：
+
+- body 中追加一行：`Blast radius: N callers, M tests affected`
+- 如果有 HTTP 链路变更：body 中注明 `Affects chain: POST /api/login`
+- 这些信息帮助代码审查者快速了解改动影响
+
+示例：
+
+```
+feat(auth): add captcha verification to login endpoint
+
+Adds SVG captcha generation and validation before password check.
+Preserves redirect parameter handling (ref: bug-memo 20240115).
+
+Blast radius: 33 callers, 47 tests affected
+Affects chain: POST /api/login
+```
 
 ## 注意事项
 

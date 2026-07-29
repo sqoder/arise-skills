@@ -1,7 +1,7 @@
 ---
 name: "arise-habits"
 command: "arise habits"
-description: "Records and enforces the user's personal coding workflow habits. Auto-detects repeated patterns and records them. Invoke at session start to load habits, or when user says 'remember my habit'."
+description: "Records and enforces the user's personal coding workflow habits. Auto-detects repeated patterns and records them. Provides a consumption protocol for other Skills to query relevant habits as constraints. Invoke at session start to load habits, or when user says 'remember my habit'."
 ---
 
 # 工作习惯记录
@@ -43,18 +43,23 @@ description: "Records and enforces the user's personal coding workflow habits. A
 - 「记住，下次……」
 - 「记得我总是……」
 
-### 3. AI 自动检测 → 直接记录（不用用户说）
+### 3. AI 自动检测 → 询问后记录
 
-当 AI 注意到用户**连续 2 次以上**用相同的方式纠正 AI 的行为时，**直接记录**，然后告知一句：
+当 AI 注意到用户**连续 3 次以上**用相同的方式纠正 AI 的行为时，**询问后记录**：
 
-> 我注意到你每次都要求 <X>，已经记到习惯里了。以后我自动这么做。
+> 我注意到你最近 3 次都要求 <X>，要不要记成习惯？记下后我以后会自动这么做。（y/n）
 
-**自动记录的触发条件（满足任一）：**
-- 用户连续 2 次纠正同一个行为（如连续 2 次说「用 pnpm 不要用 npm」）
-- 用户连续 2 次强调同一个偏好（如连续 2 次说「先提交再说」）
-- 用户明确表达过不满（如「我说了多少次了」「又忘了」）
+用户确认后才记录。如果用户说「不用记」或「这是临时的」，不记录且本次会话内不再询问同一行为。
 
-**不需要用户确认，直接记。** 如果用户不想记，会说「不要记」「删掉这条」。
+**自动检测的触发条件（满足任一）：**
+- 用户连续 3 次纠正同一个行为（如连续 3 次说「用 pnpm 不要用 npm」）
+- 用户连续 3 次强调同一个偏好（如连续 3 次说「先提交再说」）
+- 用户明确表达过不满（如「我说了多少次了」「又忘了」）——此时 1 次即可触发，但仍需确认
+- **跨会话累计**：同一类纠正出现在 ≥2 个不同会话中，第 2 次会话出现时即可触发（单会话内 3 次重复更可能是情境性，跨会话才是稳定模式）
+
+**为什么需要确认：** 自动记录容易把情境性指令误判为稳定习惯（如用户赶时间连续说「先不测试」、用户在特定项目用 pnpm 但其他项目用 npm）。让用户确认一次成本低，但能避免污染习惯库。
+
+**克制原则：** 3 次指的是「同一类纠正」而不是「同一句话」。用户三次赶时间说「先不测试了」不代表「不测试」是习惯——这是情境性指令。只有当纠正指向 AI 的默认行为模式时才询问。
 
 ## 如何记录
 
@@ -77,9 +82,12 @@ description: "Records and enforces the user's personal coding workflow habits. A
 ### <短标题>
 - **触发**: <什么情况下>
 - **动作**: <做什么>
+- **标签**: <commit / code-style / workflow / tools>
 - **来源**: <用户明确要求 / AI 自动检测> <日期>
 - **备注**: <可选，补充说明>
 ```
+
+**标签说明**：标签用于其他 Skill 按类别快速过滤相关习惯。一条习惯只取一个最匹配的标签。
 
 示例（`tools.md`）：
 
@@ -105,11 +113,12 @@ description: "Records and enforces the user's personal coding workflow habits. A
 ```markdown
 # 习惯索引
 
-| 习惯 | 类别 | 触发 | 来源 |
+| 习惯 | 标签 | 触发 | 来源 |
 |------|------|------|------|
 | [使用 pnpm](tools.md#使用-pnpm) | tools | 安装依赖时 | 自动检测 |
 | [写完就提交](commit.md#写完就提交) | commit | 任务完成后 | 用户要求 |
 | [改动最小化](code-style.md#改动最小化) | code-style | 修改代码时 | 用户要求 |
+| [修 bug 前查历史](workflow.md#修-bug-前查历史) | workflow | 排查 bug 时 | 用户要求 |
 ```
 
 AI 每次只需读 `index.md`（很短），根据当前任务判断需要看哪个类别文件，再按需读取。
@@ -131,10 +140,43 @@ AI 每次只需读 `index.md`（很短），根据当前任务判断需要看哪
 - **删除**：用户说「不要这个习惯了」「删掉」时，从类别文件和 index.md 中移除。
 - **冲突**：两条习惯矛盾时，问用户哪个优先，不要自己猜。
 
+## 被消费协议（供其他 Skill 使用）
+
+其他 Skill（如 arise-prompt、arise-commit、arise-router）需要读取习惯时，遵循以下协议：
+
+### 查询方式
+
+1. 读取 `.arise/habits/index.md`
+2. 按标签过滤与当前任务相关的条目：
+   - 提交任务 → 过滤 `commit` 标签
+   - 写代码 → 过滤 `code-style` 标签
+   - 排查 bug → 过滤 `workflow` 标签（debug 相关习惯归入 workflow）
+   - 安装/配置 → 过滤 `tools` 标签
+   - 通用流程 → 过滤 `workflow` 标签
+3. 只读匹配标签的类别文件获取详情
+4. 将习惯作为**约束条件**注入当前执行逻辑
+
+### 消费原则
+
+- **习惯是约束，不是凌驾于用户当前指令之上的命令**：如果用户本次明确要求做某事，即使与习惯冲突，以用户当前指令为准。
+- **安静应用**：消费方不要对用户说「根据你的习惯 X，我决定……」，直接按习惯做。
+- **只取相关的**：不要全量读取所有习惯文件，按标签精准过滤。
+
+### 示例
+
+arise-commit 执行时：
+1. 读 index.md → 找到标签为 `commit` 的条目
+2. 读 `commit.md` → 获取详情（如「不要 push」「message 用中文」）
+3. 将这些作为提交行为的约束
+
+arise-prompt 生成时：
+1. 读 index.md → 找到与当前任务标签匹配的条目
+2. 将匹配的习惯作为「约束模块」注入生成的提示词
+
 ## 注意事项
 
 - **安静遵守，不要复述**：加载习惯后，按习惯做就行，不要每次说「根据你的习惯 X，我现在……」。只有习惯被触发且影响决策时才提一句。
 - **不要记废话习惯**：比如「写好代码」「认真工作」这种无法执行的不要记。必须是「触发 X 时做 Y」这种可执行的形式。
-- **自动记录要克制**：只记真正稳定的模式（连续 2 次以上），不要用户随口说一句就记。
+- **自动记录要克制**：只记真正稳定的模式（连续 3 次以上或跨会话累计），不要用户随口说一句就记。务必询问后再记，给用户拒绝的机会。
 - **和 bug-fix-memory 配合**：如果用户习惯里涉及 bug 修复流程，可以在 habit 里引用 arise-bug-memo。
-- **版本控制建议**：如果是个人习惯，建议将 `.arise/habits/` 加入 `.gitignore`；如果是团队共享的工作规范，则保留在版本控制中。
+- **版本控制建议**：`.arise/habits/` 默认可提交（团队共享工作规范）。如想个人使用不共享，在 `.arise/.gitignore` 中取消 `habits/` 的注释（install.sh 已自动生成 `.arise/.gitignore`）。

@@ -12,6 +12,16 @@ description: Use when about to claim work is complete, fixed, or passing, before
 
 **违反这条规则的字面意思就是违反这条规则的精神。**
 
+## 可作为门控组件被其他 Skill 调用
+
+本 Skill 不仅可以独立使用（`/arise-verify`），还可以作为其他 Skill 的**门控组件**嵌入使用：
+
+- `arise-commit` 在提交前调用本 Skill 的门控逻辑
+- `arise-finish` 在集成前调用本 Skill 的门控逻辑
+- `arise-router` 在任何「完成」声明前调用本 Skill 的门控逻辑
+
+其他 Skill 调用时，只需执行下方「门控函数」的 5 个步骤，不需要复制整个文档。
+
 ## 铁律
 
 ```
@@ -26,6 +36,10 @@ description: Use when about to claim work is complete, fixed, or passing, before
 在声称任何状态或表达满意之前：
 
 1. 识别：什么命令能证明这个声明？
+   - 如果 .arise/codegraph-context.json 存在且 `taskId` 校验通过（从 `.arise/context.md` 的「当前 taskId」读取，与 codegraph-context.json 的 `taskId` 字段对比，两者匹配）：
+     - 读取 affectedTests → 精准定位要跑哪些测试文件
+     - 读取 riskLevel → 决定验证强度
+   - 如果不存在或不匹配：用项目的全量测试命令
 2. 执行：跑完整命令（新鲜的、完整的）
 3. 阅读：完整输出，检查退出码，数失败数
 4. 验证：输出是否确认了声明？
@@ -35,6 +49,57 @@ description: Use when about to claim work is complete, fixed, or passing, before
 
 跳过任何一步 = 撒谎，不是验证
 ```
+
+### CodeGraph 精准验证策略
+
+当 `.arise/codegraph-context.json` 存在时，门控函数的「识别」阶段升级：
+
+#### 精准测试选择
+
+不是泛泛的「跑所有测试」，而是根据 CodeGraph 的分析精准定位：
+
+```
+如果 affectedTests 存在且有内容：
+  → 跑这些具体的测试文件，而不是全量测试
+  → 示例：pnpm vitest run tests/auth.test.ts tests/e2e/login.e2e.ts
+
+如果 affectedTests 为空或不存在：
+  → 回退到项目的全量测试命令
+```
+
+#### 分层验证（riskLevel >= HIGH）
+
+当风险等级较高时，不是一次性跑完所有测试，而是分层验证：
+
+```
+1. 先跑单元测试（影响范围内的）
+2. 单元测试通过 → 跑集成测试（影响范围内的）
+3. 集成测试通过 → 跑 e2e 测试（如果在爆炸范围内）
+4. 任何一层失败 → 停止，报告失败层级
+```
+
+#### doNotBreak 清单验证（riskLevel >= MEDIUM 时必跑）
+
+测试通过 ≠ 行为约束未被破坏。`doNotBreak` 是 router 在预分析时生成的「绝对不能破坏的行为清单」（来自 CodeGraph suggestions、httpChain 非目标层、bug-memo 防回归项、受影响测试隐含行为）。验证时必须额外检查：
+
+```
+如果 codegraph-context.json 存在 doNotBreak 清单（非空）：
+  对每条 doNotBreak 项：
+    1. 检查是否有对应测试覆盖（在 affectedTests 中找断言该行为的测试）
+       - 有覆盖 → 测试通过即视为该约束未被破坏
+       - 无覆盖 → 进入步骤 2
+    2. 无测试覆盖的约束 → 必须人工确认或临时补一个断言测试
+       - 不能仅凭"测试通过"就放行
+       - 向用户报告：「doNotBreak 项 <X> 无测试覆盖，请确认本次改动未破坏该行为，或补充测试」
+    3. 用户确认或补测试后 → 该约束视为通过
+  所有 doNotBreak 项通过 → 才能进入第 5 步（做出声明）
+```
+
+**为什么需要这步：** 测试只能证明"被测的行为"没坏，证明不了"没被测的行为"没坏。doNotBreak 里的约束往往是没有直接测试的隐式行为（如"redirect 参数透传"、"rateLimit 中间件行为"），如果跳过这步，风险约束在规格阶段被注入、在验证阶段被遗忘。
+
+#### 验证完成后
+
+验证全部通过后（含 doNotBreak 检查），**verify 不清除 `.arise/codegraph-context.json`**——清除责任归后续流水线末端（arise-commit 或 arise-finish）。这确保 commit 仍能读取 blast radius 信息附加到 message 中。
 
 ## 常见失败
 

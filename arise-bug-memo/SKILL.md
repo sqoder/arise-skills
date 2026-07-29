@@ -1,7 +1,7 @@
 ---
 name: "arise-bug-memo"
 command: "arise bug-memo"
-description: "Records pitfalls and hard-to-fix issues (bugs, config traps, doc gotchas, tool quirks) in the project to prevent regressions. Invoke when starting to debug a new issue (to check history first) or after resolving a tricky problem (to log it)."
+description: "Records pitfalls and hard-to-fix issues (bugs, config traps, doc gotchas, tool quirks) in the project to prevent regressions. Provides a retrieval protocol for other Skills to query history before debugging. Invoke when starting to debug a new issue (to check history first) or after resolving a tricky problem (to log it)."
 ---
 
 # 踩坑记忆
@@ -99,7 +99,7 @@ Vibecoding 时踩过的坑——难修的 bug、诡异的配置问题、文档�
 
 1. **不要新开 entry**，打开原 entry，在「回归记录」下追加一行：
    `- YYYY-MM-DD: 又出现，原因是 <...>`
-2. 在 `log.md` 把该条状态从「已修复」改为「已回归过」。
+2. 在 `log.md` 把该条状态从「已解决」改为「已回归过」。
 3. 重新审视「防回归检查项」是否需要补充——既然又犯了，说明检查项不够。
 
 ### 模块索引区（log.md 底部）
@@ -114,11 +114,65 @@ Vibecoding 时踩过的坑——难修的 bug、诡异的配置问题、文档�
 - **auth**: [token 过期跳转](entries/20240115-token-expired-redirect.md), [session 丢失](entries/20240201-session-lost.md)
 - **payment**: [重复扣款](entries/20240120-double-charge.md)
 - **ui**: [暗色模式闪烁](entries/20240210-dark-mode-flash.md)
+
+## 按根因类型索引
+
+- **竞态条件**: [session 丢失](entries/20240201-session-lost.md), [重复扣款](entries/20240120-double-charge.md)
+- **状态管理**: [token 过期跳转](entries/20240115-token-expired-redirect.md)
+- **渲染时序**: [暗色模式闪烁](entries/20240210-dark-mode-flash.md)
+- **配置/环境**: ...
+- **类型/接口不匹配**: ...
 ```
 
-- 模块名取涉及文件的**顶级目录**或**功能域**（如 `auth`、`payment`、`api`）。
-- 一个 entry 可出现在多个模块下。
-- 检索时优先按模块索引定位，再按时间线索引确认。
+**双维度索引说明：**
+
+- **按模块索引**：模块名取涉及文件的顶级目录或功能域（如 `auth`、`payment`、`api`）。回答「这个模块踩过什么坑」。
+- **按根因类型索引**：根因归类为常见模式（竞态条件、状态管理、渲染时序、配置环境、类型不匹配、网络/并发、缓存失效、边界条件）。回答「这类问题的常见原因是什么」。
+- 一个 entry 可出现在多个模块和多个根因类型下。
+- 检索时：先按模块定位，再按根因类型交叉验证。
+
+**为什么加根因类型索引：** 很多时候新 bug 和旧 bug 不在同一个模块，但根因模式相同。比如两次「竞态条件」分别出现在 auth 和 payment 里。纯模块索引会漏掉这种跨域经验。
+
+## 归档策略
+
+条目只增不减会导致 log.md 膨胀、检索退化。当活跃条目超过 50 条，或 log.md 超过 5KB 时，触发归档：
+
+### 归档规则
+
+满足以下**所有**条件的条目可被归档：
+- 状态为「已解决」（非「已回归过」）
+- 记录日期超过 **12 个月**（bug-memo 的价值在于跨周期防回归，很多 bug 是半年到一年后才回归的——依赖升级、新人改老代码。6 个月归档过于激进，会丢失仍有价值的防回归信息）
+- 无回归记录（「回归记录」区为空）
+- **模块活跃度检查**：如果该条目涉及的模块在最近 3 个月有 git commit，**不归档**（模块仍在被修改，回归风险仍在）
+
+### 归档操作
+
+1. 将 entry 文件移动到 `entries/archived/` 目录
+2. 从 log.md 主列表中移除该行
+3. 在 log.md 底部的「归档索引」区保留一行引用：
+   ```
+   ## 归档条目（N 条）
+   - YYYY-MM-DD | [标题](entries/archived/YYYYMMDD-slug.md) | 关键词
+   ```
+4. 从「按模块索引」和「按根因类型索引」中移除该条目
+
+### 归档条目的检索
+
+- 检索时优先搜索活跃条目，未命中时再扫描 `entries/archived/`
+- 归档条目命中时，提示用户：「这是已归档的历史条目（超过 12 个月未回归），可能已不再相关」
+
+### 归档后再次回归的处理协议
+
+归档不是终点——如果归档的条目再次回归（依赖升级、新人改老代码时常见），需要「复活」：
+
+1. **检测**：检索时扫描到归档条目命中，且用户描述与归档条目的「症状/关键词」匹配
+2. **复活**：将 entry 文件从 `entries/archived/` 移回 `entries/`
+3. **更新状态**：在 entry 的「回归记录」区追加 `- YYYY-MM-DD: 归档后再次回归，原因是 <...>`
+4. **更新 log.md**：在主列表重新加一行（状态为「已回归过」），从「归档索引」区移除该行
+5. **重新加回索引**：恢复「按模块索引」和「按根因类型索引」中的引用
+6. **告知用户**：「这个 bug 之前已归档，但现在又回归了——已从归档恢复到活跃区。说明之前的修复可能不够彻底，建议重新审视防回归检查项。」
+
+**为什么需要复活而非新开**：归档条目已有完整的根因分析、修复方案、防回归检查项——新开 entry 会丢失这些上下文。复活能保留历史，并追加新的回归记录，形成更完整的防回归知识。
 
 ## 注意事项
 
@@ -128,4 +182,58 @@ Vibecoding 时踩过的坑——难修的 bug、诡异的配置问题、文档�
 - 只记录「棘手」的问题，判断标准见上文。
 - 不要把整段 diff 贴进 entry，只贴关键文件路径，diff 在 git 里有。
 - 检索历史时优先按「按模块索引」和「关键词」匹配，这两者比症状描述更稳定。
-- **版本控制建议**：如果是个人使用，建议将 `.arise/` 加入 `.gitignore`；如果是团队共享经验，则保留在版本控制中。
+- **版本控制建议**：`.arise/bug-fix-memory/` 默认可提交（团队共享踩坑经验）。如想个人使用不共享，在 `.arise/.gitignore` 中取消 `bug-fix-memory/` 的注释（install.sh 已自动生成 `.arise/.gitignore`）。
+
+## 被检索协议（供其他 Skill 使用）
+
+其他 Skill（如 arise-prompt、arise-router）需要检索历史踩坑时，遵循以下协议：
+
+### 检索接口
+
+**输入**：任意组合的检索维度
+- 关键词（用户描述中的关键词）
+- 文件路径（当前涉及的文件）
+- 模块名（涉及的顶级目录/功能域）
+- 症状描述（报错信息、现象）
+
+**输出**：匹配的历史条目摘要
+- 标题 + 根因摘要
+- 防回归检查项
+- entry 文件路径（需要详情时读取）
+
+### 检索步骤
+
+1. 读取 `.arise/bug-fix-memory/log.md`
+2. 按以下优先级匹配：
+   - **CodeGraph Context 关联匹配**（最精准）：如果 `.arise/codegraph-context.json` 存在且 `taskId` 校验通过（从 `.arise/context.md` 的「当前 taskId」读取，与 codegraph-context.json 的 `taskId` 字段对比匹配），取出 `blastRadius.affectedFiles`，用这些文件路径与 bug-memo 的「涉及文件」字段交叉匹配
+   - **模块索引**（log.md 底部）→ 按涉及模块定位
+   - **关键词**（每条记录的关键词字段）→ 与用户描述匹配
+   - **文件路径**（每条记录的涉及文件字段）→ 与当前操作文件匹配
+   - **症状描述**（entry 详情）→ 最后才用，因为不够稳定
+3. 命中时：读取对应 `entries/` 详情，提取「根因」和「防回归检查项」
+4. 将结果作为「历史经验」注入当前任务上下文
+
+### 检索原则
+
+- **文件不存在则跳过**：`.arise/bug-fix-memory/` 不存在说明没有历史记录，不报错，继续执行。
+- **没命中不强提**：检索无结果时，不要对用户说「没找到历史记录」，安静继续。
+- **命中时主动告知**：找到相关记录时，在动手修复前告诉用户「这类问题之前踩过坑」。
+- **与 context.md 联动**：记录新条目时，如果 `.arise/context.md` 存在，从中获取目录结构信息来自动填充「涉及模块」字段。
+
+### CodeGraph 联动增强
+
+#### 检索时利用 CodeGraph Context
+
+当 `.arise/codegraph-context.json` 存在时（且 `taskId` 校验通过——从 `.arise/context.md` 的「当前 taskId」读取，与 codegraph-context.json 的 `taskId` 字段对比匹配），检索精度显著提升：
+
+- 从 Context 中取出 `blastRadius.affectedFiles`
+- 用这些文件路径与 bug-memo 每条记录的「涉及文件」字段交叉匹配
+- CodeGraph 告诉你真正关联的文件是哪些，比纯关键词匹配更精准
+
+#### 记录时自动填充
+
+记录新 bug 时，如果 `codegraph-context.json` 存在：
+
+- 自动填充「涉及文件」为 `blastRadius.affectedFiles`（而不是只写直接修改的文件）
+- 自动填充「防回归检查项」为 CodeGraph 建议的受影响测试（`affectedTests`）
+- 标注 `riskLevel`，方便后续检索时按风险排序

@@ -12,9 +12,16 @@ description: Use when implementation is complete, all tests pass, and you need t
 
 **开始时宣告：** "我正在使用 finishing-a-development-branch skill 来完成这项工作。"
 
-## 第 1 步：验证测试
+## 前置动作（执行前必做）
+
+1. **读取习惯约束**：检查 `.arise/habits/index.md` 中标签为 `workflow` 或 `commit` 的条目，读取对应类别文件获取用户的集成习惯（如 PR 语言、是否 squash、合并策略等）。文件不存在则跳过。
+2. **读取项目上下文**：检查 `.arise/context.md` 获取分支策略约定。文件不存在则按默认逻辑检测。
+
+## 第 1 步：验证测试（遵循 arise-verify 门控原则）
 
 跑项目的完整测试套件（`npm test` / `cargo test` / `pytest` / `go test ./...`）。
+
+本步遵循 arise-verify 的核心逻辑：先跑命令拿到证据，再根据证据决定是否继续。
 
 **如果测试失败**，报告失败并停下——菜单在绿灯之后才出现：
 
@@ -78,6 +85,17 @@ WORKTREE_PATH=$(git rev-parse --show-toplevel)
 ## 第 5 步：执行选择
 
 ### 选项 1：本地合并
+
+**合并前必做：检测 feature 分支未提交改动**
+
+```bash
+# 切到 feature 分支检查是否有未提交改动
+git checkout <feature-branch>
+git status --porcelain
+```
+
+- 有未提交改动 → 停下，提示用户：「feature 分支有未提交改动，直接合并会丢失或污染这些改动。请先 commit 或 stash。」不要自动处理，等用户决定。
+- 无未提交改动 → 继续合并流程。
 
 ```bash
 # 获取主仓库根目录，确保 CWD 安全
@@ -157,6 +175,13 @@ git worktree prune  # 自愈：清理过期的注册
 ```
 
 **否则：** 宿主环境拥有这个工作区——保持不动。如果你的平台提供了工作区退出工具，使用它。
+
+## 第 7 步：清理 CodeGraph Context
+
+集成完成后（无论选择哪个选项），如果 `.arise/codegraph-context.json` 存在：
+- 删除该文件（会话级缓存生命周期结束）
+- 同时清空 `.arise/context.md`「活跃状态」区域的「当前 taskId」字段（置为空）
+- 下次任务开始时 router 会重新生成
 
 ## 快速参考
 
